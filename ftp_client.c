@@ -12,9 +12,51 @@
 #include<grp.h>
 #include<pwd.h>
 #include<time.h>
+#include<sys/types.h>
 
 #define PORT 21
 #define MAXSZ 1024
+
+char *find_home_dir(char *file)
+{
+	struct passwd *pw;
+	char *sudo_uid = getenv("SUDO_UID");
+	pw = getpwuid(atoi(sudo_uid));
+	
+	return pw->pw_dir;
+
+}
+
+int validate_ip(char *ip)
+{
+	int value_1 = -1;
+	int value_2 = -1;
+	int value_3 = -1;
+	int value_4 = -1;
+	int count = 0;
+	int i = 0;
+
+	while(ip[i] != '\0')
+	{
+		if(ip[i] == '.')
+			count++;
+		i++;
+	}
+	
+	if(count != 3 )
+		return -1;
+	else
+	{
+		sscanf(ip,"%d.%d.%d.%d",&value_1,&value_2,&value_3,&value_4);
+		
+		if(value_1 < 0 || value_2 < 0 || value_3 < 0 || value_4 < 0 || value_1 > 255 || value_2 > 255 || value_3 > 255 || value_4 > 255)
+			return -1;
+		else
+			return 1;
+
+	}
+
+}
 
 void ls_dir(char *dir_name)
 {
@@ -66,6 +108,7 @@ void ls_l_dir(char *dir_name)
 		pw = getpwuid(buff.st_uid);
 		info = localtime(&(buff.st_mtime));
 		strftime(time_buff,sizeof(time_buff),"%b %d %H:%M",info);
+
 	   if(strcmp(entry->d_name,".") != 0 && strcmp(entry->d_name,"..") != 0 && entry->d_name[0]!= '.')
  		{
 			if(buff.st_size % 1024 == 0)
@@ -105,59 +148,60 @@ void ls_l_dir(char *dir_name)
 					break;
 			}
 
-		if(buff.st_mode & S_IRUSR)
-			printf("r");
-		else
-			printf("-");
+			if(buff.st_mode & S_IRUSR)
+				printf("r");
+			else
+				printf("-");
 
-		if(buff.st_mode & S_IWUSR)
-			printf("w");
-		else
-			printf("-");
+			if(buff.st_mode & S_IWUSR)
+				printf("w");
+			else
+				printf("-");
 
-		if(buff.st_mode & S_IXUSR)
-			printf("x");
-		else
-			printf("-");
+			if(buff.st_mode & S_IXUSR)
+				printf("x");
+			else
+				printf("-");
 
-		if(buff.st_mode & S_IRGRP)
-			printf("r");
-		else
-			printf("-");
+			if(buff.st_mode & S_IRGRP)
+				printf("r");
+			else
+				printf("-");
 
-		if(buff.st_mode & S_IWGRP)
-			printf("w");
-		else
-			printf("-");
+			if(buff.st_mode & S_IWGRP)
+				printf("w");
+			else
+				printf("-");
 
-		if(buff.st_mode & S_IXGRP)
-			printf("x");
-		else
-			printf("-");
+			if(buff.st_mode & S_IXGRP)
+				printf("x");
+			else
+				printf("-");
 
-		if(buff.st_mode & S_IROTH)
-			printf("r");
-		else
-			printf("-");
+			if(buff.st_mode & S_IROTH)
+				printf("r");
+			else
+				printf("-");
 
-		if(buff.st_mode & S_IWOTH)
-			printf("w");
-		else
-			printf("-");
+			if(buff.st_mode & S_IWOTH)
+				printf("w");
+			else
+				printf("-");
 			
-		if(buff.st_mode & S_IXOTH)
-			printf("x");
-		else
-			printf("-");
+			if(buff.st_mode & S_IXOTH)
+				printf("x");
+			else
+				printf("-");
 
 
-		if(((buff.st_mode & S_IFMT)^S_IFCHR) == 0 || ((buff.st_mode & S_IFMT)^S_IFBLK) ==0)
-			printf(" %6d %8s %8s %5d, %5d %13s %s\n",(int)buff.st_nlink,pw->pw_name,gp->gr_name,major(buff.st_rdev),minor(buff.st_rdev),time_buff,entry->d_name);
-		else
-			printf(" %6d %8s %8s %12u %13s %s\n",(int)buff.st_nlink,pw->pw_name,gp->gr_name,(unsigned int)buff.st_size,time_buff,entry->d_name);
+			if(((buff.st_mode & S_IFMT)^S_IFCHR) == 0 || ((buff.st_mode & S_IFMT)^S_IFBLK) ==0)
+				printf(" %6d %8s %8s %5d, %5d %13s %s\n",(int)buff.st_nlink,pw->pw_name,gp->gr_name,major(buff.st_rdev),minor(buff.st_rdev),time_buff,entry->d_name);
+			else
+				printf(" %6d %8s %8s %12u %13s %s\n",(int)buff.st_nlink,pw->pw_name,gp->gr_name,(unsigned int)buff.st_size,time_buff,entry->d_name);
 		
 		}
 	}
+
 	printf("total %d\n\n",val);
 	closedir(fd);
 
@@ -236,7 +280,8 @@ int main(int argc, char *argv[])
 	int size;
 	int p;
 	int total;
-	
+	int ip_valid;
+
 	char message_from_server[MAXSZ];//message from server
 	char user_input[MAXSZ];//input from user
 	char message_to_server[MAXSZ];//message to server
@@ -248,9 +293,27 @@ int main(int argc, char *argv[])
 	char file[MAXSZ];//file to be created on client
 	char username[MAXSZ];//username entered by the user
 	char working_dir[MAXSZ];
+	char file_home_dir[MAXSZ];	
 
+	char *home_dir;
 	char *password=malloc(MAXSZ);//password enterd by user
 	char passive[]="PASV\r\n";	
+
+	if(argc != 2)
+	{
+		printf("Error: argument should be ip-address of server\n");
+		exit(1);
+	}
+	
+	ip_valid = validate_ip(argv[1]);
+	
+	if(ip_valid == -1)
+	{
+		printf("Error: Invalid ip-address\n");
+		exit(1);
+	}
+	
+	home_dir = find_home_dir(argv[0]);
 
 	sockfd = socket(AF_INET,SOCK_STREAM,0);
 	if(sockfd == -1)
@@ -309,6 +372,7 @@ int main(int argc, char *argv[])
 		bzero(message_to_server,MAXSZ);
 		bzero(message_from_server,MAXSZ);
 		bzero(working_dir,MAXSZ);
+		bzero(file_home_dir,MAXSZ);
 		bzero(data,4096);
 	
 		no_of_bytes = read(0,user_input,MAXSZ);
@@ -457,8 +521,11 @@ int main(int argc, char *argv[])
 					close(newsockfd);
 					continue;
 				}
+			
 				
-				fd = open(file,O_CREAT|O_WRONLY|O_TRUNC,0644);			
+				sprintf(file_home_dir,"%s/%s",home_dir,file);
+					
+				fd = open(file_home_dir,O_CREAT|O_WRONLY|O_TRUNC,0644);			
 				
 				while((no_of_bytes = recv(newsockfd,data,4096,0))>0)
 				{
