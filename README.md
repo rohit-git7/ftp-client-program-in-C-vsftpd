@@ -17,5 +17,5 @@ All functions are included. For example:
                                                                                                                      
 To run:                                                                                                           
 Run command `make all` to compile program.                                                                              
-To execute, run `./ftp server-ip-address`.                                                                            
-Enter user credentials to login on server.                                                                           
+To execute, run `./myftp server-ip-address`.                                                                            
+Enter user credentials to login on server.                                                                                                                                           
