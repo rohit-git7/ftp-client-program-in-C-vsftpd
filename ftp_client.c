@@ -61,8 +61,6 @@ int main(int argc, char *argv[])
 	char user[MAXSZ];//user details sent to server
 	char pass[MAXSZ];//password details sent to server
 	char dir[MAXSZ];//directory name
-	char file_name[MAXSZ];//file name to be sent to server
-	char file[MAXSZ];//file to be created on client
 	char username[MAXSZ];//username entered by the user
 	char working_dir[MAXSZ];
 
