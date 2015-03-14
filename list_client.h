@@ -1,26 +1,33 @@
+/*
+List files in current working directory on client side.
+*/
+
+/* Return result of character comparison(Ignoring LETTER CASE)*/
 int mycompare(const void *a, const void *b)
 {
 	return strcasecmp(*(const char **)a,*(const char **)b);
 }
 
+
+/* `ls` comand in linux. List files in current working directory without details.*/
 void ls_dir(char *dir_name)
 {
 	DIR *fd;
 
 	char *arg[MAXSZ];
 
-	int i = 0;
+	int i = INITIALISE;
 	int n;
 	
 	struct dirent *entry;
-	fd = opendir(dir_name);
+	fd = opendir(dir_name);/* Open directory */
 	if(fd == NULL)
 	{
 		perror("Error");
 		return;
 	}
 
-	while((entry = readdir(fd))!=NULL)
+	while((entry = readdir(fd))!=NULL)/* Ignore hidden files */
 	{
 	    if(entry->d_name[0] != '.' && strcmp(entry->d_name,".") != 0 && strcmp(entry->d_name,"..") != 0)
 		{
@@ -31,7 +38,7 @@ void ls_dir(char *dir_name)
 	
 	n = i;
 	
-	qsort(arg,n,sizeof(const char *),mycompare);
+	qsort(arg,n,sizeof(const char *),mycompare);/* Sort file names in alphabetical order ignoring LETTER CASE*/
 
 	i = 0;
 	while(i < n)
@@ -49,28 +56,28 @@ void ls_l_dir(char *dir_name)
 	char time_buff[MAXSZ];
 	char *arg[MAXSZ];
 	
-	int i = 0;
+	int i = INITIALISE;
 	int n;
-	int val = 0;
+	int val = INITIALISE;
 	int temp;
 
-	struct group *gp;
-	struct passwd *pw;
+	struct group *gp;/* structure contating group details */
+	struct passwd *pw;/* structure containing passwd file */
 	struct tm *info;
 	struct stat buff;
 	struct dirent *entry;
 	DIR *fd;
-	fd  = opendir(dir_name);
+	fd  = opendir(dir_name);/* Open directory */
 	if(fd == NULL)
 	{
 		perror("Error");
 		return;
 	}
 	
-	while((entry = readdir(fd))!= NULL)
+	while((entry = readdir(fd))!= NULL)/* Read directory */
 	{
 		
-
+	/* Call kiya tha */
 	   if(strcmp(entry->d_name,".") != 0 && strcmp(entry->d_name,"..") != 0 && entry->d_name[0]!= '.')
  		{
 			*(arg + i) = entry->d_name;
@@ -102,7 +109,7 @@ void ls_l_dir(char *dir_name)
 				val += (temp + (4 - (temp % 4)));
 			}
 
-
+			/* Selecting file type */		
 			switch(buff.st_mode & S_IFMT)
 			{
 				case S_IFCHR:
@@ -128,6 +135,8 @@ void ls_l_dir(char *dir_name)
 					break;
 			}
 
+
+			/* File permissions */
 			if(buff.st_mode & S_IRUSR)
 				printf("r");
 			else
