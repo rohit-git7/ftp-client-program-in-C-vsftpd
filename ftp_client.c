@@ -5,6 +5,7 @@
 #include"get_content.h"
 #include"put_content.h"
 
+/*Get home directory of user executing program */
 char *find_home_dir(char *file)
 {
 	struct passwd *pw;
@@ -15,14 +16,15 @@ char *find_home_dir(char *file)
 
 }
 
+/*Validating IP Address*/
 int validate_ip(char *ip)
 {
-	int value_1 = -1;
-	int value_2 = -1;
-	int value_3 = -1;
-	int value_4 = -1;
-	int count = 0;
-	int i = 0;
+	int value_1 = MIN_VALUE;
+	int value_2 = MIN_VALUE;
+	int value_3 = MIN_VALUE;
+	int value_4 = MIN_VALUE;
+	int count = INITIALISE;
+	int i = INITIALISE;
 
 	while(ip[i] != '\0')
 	{
@@ -37,7 +39,7 @@ int validate_ip(char *ip)
 	{
 		sscanf(ip,"%d.%d.%d.%d",&value_1,&value_2,&value_3,&value_4);
 		
-		if(value_1 < 0 || value_2 < 0 || value_3 < 0 || value_4 < 0 || value_1 > 255 || value_2 > 255 || value_3 > 255 || value_4 > 255)
+		if(value_1 < MIN_IP || value_2 < MIN_IP || value_3 < MIN_IP || value_4 < MIN_IP || value_1 > MAX_IP || value_2 > MAX_IP || value_3 > MAX_IP || value_4 > MAX_IP)/* IP Addresses from 0.0.0.0 to 255.255.255.255*/
 			return -1;
 		else
 			return 1;
@@ -48,120 +50,195 @@ int validate_ip(char *ip)
 
 int main(int argc, char *argv[])
 {
-	int sockfd;//to create socket
-	int no_of_bytes;
+	int sockfd;/* to create socket */
+	int no_of_bytes;/* number of bytes sent or received from server */
+	
+	/*Temporary Variables*/
 	int connect_value;
 	int ip_valid;
+	int temp = MIN_VALUE;
 
-	struct sockaddr_in serverAddress;//client will connect on this
+	struct sockaddr_in serverAddress;/* client will connect on this */
+	struct timeval tm;/* time structure to set time wait for receive buffer */
+	tm.tv_sec = 1;
+	tm.tv_usec = 750000;
 
-	char message_from_server[MAXSZ];//message from server
-	char user_input[MAXSZ];//input from user
-	char message_to_server[MAXSZ];//message to server
-	char user[MAXSZ];//user details sent to server
-	char pass[MAXSZ];//password details sent to server
-	char dir[MAXSZ];//directory name
-	char username[MAXSZ];//username entered by the user
+	char message_from_server[MAXSZ];/* message from server*/
+	char user_input[MAXSZ];/* input from user */
+	char message_to_server[MAXSZ];/* message to server */
+	char user[MAXSZ];/* user details sent to server */
+	char pass[MAXSZ];/* password details sent to server */
+	char dir[MAXSZ];/* directory name */
+	char username[MAXSZ];/* username entered by the user */
 	char working_dir[MAXSZ];
 
 	char *home_dir;
-	char *password = malloc(MAXSZ);//password enterd by user
+	char *password = malloc(MAXSZ);/* password enterd by user */
 
-	if(argc != 2)
+	if(argc != 2) /* `./executable ip-adddress` */
 	{
 		printf("Error: argument should be ip-address of server\n");
 		exit(1);
 	}
 	
-	ip_valid = validate_ip(argv[1]);
+	ip_valid = validate_ip(argv[1]);/* Validate ip-address entered by user */
 	
-	if(ip_valid == -1)
+	if(ip_valid == MIN_VALUE)/* Invalid ipaddress */
 	{
 		printf("Error: Invalid ip-address\n");
 		exit(1);
 	}
 	
-	home_dir = find_home_dir(argv[0]);
+	home_dir = find_home_dir(argv[0]);/* Home directory of user executing the program */
 
-	sockfd = socket(AF_INET,SOCK_STREAM,0);
-	if(sockfd == -1)
+	sockfd = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);/* Create socket */
+
+	if(sockfd == -1)/* Error in socket creation */
 	{
         	perror("Error:"); 
 		exit(1);
 	}
 
-	bzero(&serverAddress,sizeof(serverAddress));
+	bzero(&serverAddress,sizeof(serverAddress));/* Initialise structure */
+
 	serverAddress.sin_family = AF_INET;
 	serverAddress.sin_addr.s_addr = inet_addr(argv[1]);
 	serverAddress.sin_port = htons(PORT);
 
-	//client  connect to server on port
+	/* Connect to server */
 	connect_value = connect(sockfd,(struct sockaddr *)&serverAddress,sizeof(serverAddress));
-	if(connect_value == -1)
+	if(connect_value == -1)/* Connection Error */
 	{
        		perror("Error");
         	exit(1);
 	}
+
+
+	/* Set time boundation on receive buffer */
+	if(setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,(char *)&tm,sizeof(tm)) == -1)
+	{
+		perror("Error");
+		exit(1);
+	}
 	
 	printf("Connected to %s.\n",argv[1]);
-	
-	no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0);
-	message_from_server[no_of_bytes] = '\0';
-	printf("%s\n",message_from_server);
 
+	/* Receive message from server "Server will send 220" */
+	while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0 )
+	{
+		message_from_server[no_of_bytes] = '\0';
+		printf("%s\n",message_from_server);
+		sleep(1);
+		fflush(stdout);
+	}
+	
 	printf("Name (%s): ",argv[1]);
-	scanf("%s",username);
+	scanf("%s",username);/* Enter name of user on server */
+	
 	
 	sprintf(user,"USER %s\r\n",username);
 		
-	send(sockfd,user,strlen(user),0);
-	no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0);
-	message_from_server[no_of_bytes] = '\0';
-	printf("%s\n",message_from_server);
+	send(sockfd,user,strlen(user),0);/* Send username to server */
 	
-	password = getpass("Password: ");
-	sprintf(pass,"PASS %s\r\n",password);
+
+	/*
+		Receive message from server after sending user name.
+		Message with code 331 asks you to enter password corresponding to user.
+		Message with code 230 means no password is required for the entered username(LOGIN successful).
+	*/
+	while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0)
+	{	
+		message_from_server[no_of_bytes] = '\0';
+		if(strncmp(message_from_server,"331",3) == 0)
+		{
+			temp = 1;
+		}
 	
-	send(sockfd,pass,strlen(pass),0);
-	no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0);
-	message_from_server[no_of_bytes] = '\0';
-	printf("%s\n",message_from_server);
-	
-	if(memcmp(message_from_server,"230",3) != 0)
+		if(strncmp(message_from_server,"230",3) == 0)
+		{
+			temp = 2;
+		}
+		
+		if(strncmp(message_from_server,"530",3) == 0)
+		{
+			temp = 0;	
+		}
+		printf("%s\n",message_from_server);
+		sleep(1);
+		fflush(stdout);
+	}
+
+	if(temp == 1)
+	{
+		password = getpass("Password: ");/* Enter password */
+		sprintf(pass,"PASS %s\r\n",password);
+		
+		send(sockfd,pass,strlen(pass),0);/* Send password to server */
+		sleep(4);
+
+		/* Receive message from server */
+		while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0)
+		{
+			message_from_server[no_of_bytes] = '\0';
+			if(strncmp(message_from_server,"230",3) == 0)
+			{
+				temp = 2;
+			}
+			
+			if(strncmp(message_from_server,"530",3) == 0)
+			{
+				temp = 0;	
+			}
+			printf("%s\n",message_from_server);
+			fflush(stdout);
+			
+		}
+	}	
+
+	if(temp == 0)
 	{
 		exit(1);
 	}
 	
+	/* Infinite Loop for user operation */
 	while(1)
 	{
 		printf("ftp> ");
 		fflush(stdout);
 	
+		/* Initialise strings */
 		bzero(user_input,MAXSZ);
 		bzero(message_to_server,MAXSZ);
 		bzero(message_from_server,MAXSZ);
 		bzero(working_dir,MAXSZ);
 	
+		/* Read user input */
 		no_of_bytes = read(STDIN_FILENO,user_input,MAXSZ);
 		user_input[no_of_bytes] = '\0';		
 		
+		/* Remove trailing return and newline characters */
 		if(user_input[no_of_bytes - 1] == '\n')
 			user_input[no_of_bytes - 1] = '\0';
 		if(user_input[no_of_bytes - 1] == '\r')
 			user_input[no_of_bytes - 1] = '\0';
 
+		/* User wants to exit */
 		if(strcmp(user_input,"exit") == 0 || strcmp(user_input,"quit") == 0 || strcmp(user_input,"bye") == 0)
 		{
 			sprintf(message_to_server,"QUIT\r\n");
-
+		
+			/* Send message to server */
 			send(sockfd,message_to_server,strlen(message_to_server),0);
-			no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0);
-			message_from_server[no_of_bytes] = '\0';
-			printf("%s\n",message_from_server);
+			while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0)
+			{
+				message_from_server[no_of_bytes] = '\0';
+				printf("%s\n",message_from_server);
+			}
 			break;
 		}
 
-		if(memcmp(user_input,"!cd ",4) == 0 || strcmp(user_input,"!cd") == 0)
+		/* Change directory on client side */
+		if(strncmp(user_input,"!cd ",4) == 0 || strcmp(user_input,"!cd") == 0)
 		{
 			if(chdir(user_input + 4) == 0)
 			{
@@ -173,56 +250,70 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		if(memcmp(user_input,"!pwd ",5) == 0 || strcmp(user_input,"!pwd") == 0)
+		/* Current working directory on client side */
+		if(strncmp(user_input,"!pwd ",5) == 0 || strcmp(user_input,"!pwd") == 0)
 		{
 			getcwd(working_dir,MAXSZ);	
 			printf("%s\n\n",working_dir);
 		}	
 
-		if(memcmp(user_input,"!ls -l ",7) == 0 || strcmp(user_input,"!ls -l") == 0)
+		/* List files with details in current working directory on client side */
+		if(strncmp(user_input,"!ls -l ",7) == 0 || strcmp(user_input,"!ls -l") == 0)
 		{
 			getcwd(working_dir,MAXSZ);	
 			ls_l_dir(working_dir);
 			continue;
 		}
-			
-		if(memcmp(user_input,"!ls ",4) == 0 || strcmp(user_input,"!ls") == 0)
+		
+		/* List files in current working directory on client side */	
+		if(strncmp(user_input,"!ls ",4) == 0 || strcmp(user_input,"!ls") == 0)
 		{
 			getcwd(working_dir,MAXSZ);	
 			ls_dir(working_dir);
 		}
 		
-		if(memcmp(user_input,"cd ",3) == 0)
+		/* Change directory on server side */
+		if(strncmp(user_input,"cd ",3) == 0)
 		{
 			sprintf(dir,"CWD %s\r\n",user_input + 3);
 			send(sockfd,dir,strlen(dir),0);
 		
-			no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0);
-			message_from_server[no_of_bytes] = '\0';
-			printf("%s\n",message_from_server);
+			while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0)
+			{
+				message_from_server[no_of_bytes] = '\0';
+				printf("%s\n",message_from_server);
+				fflush(stdout);
+			}
 		}
 	
-		if(memcmp(user_input,"ls ",3)== 0 || strcmp(user_input,"ls")== 0)
+		/* List files on server side */
+		if(strncmp(user_input,"ls ",3)== 0 || strcmp(user_input,"ls")== 0)
 		{
 			list_content(argv[1],user_input,sockfd);	
 		}
 	
+		/* Current working directory on server side */
 		if(strcmp(user_input,"pwd")== 0)
 		{
 			sprintf(message_to_server,"PWD\r\n");
 			send(sockfd,message_to_server,strlen(message_to_server),0);
 		
-			no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0);
-			message_from_server[no_of_bytes] = '\0';
-			printf("%s\n",message_from_server);
+			while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0)
+			{
+				message_from_server[no_of_bytes] = '\0';
+				printf("%s\n",message_from_server);
+				fflush(stdout);
+			}
 		}
 
-		if(memcmp(user_input,"get ",4) == 0)
+		/* Download file from server */
+		if(strncmp(user_input,"get ",4) == 0)
 		{
 			get_content(argv[1],user_input,sockfd,home_dir);
 		}
 		
-		if(memcmp(user_input,"put ",4)== 0)
+		/* Upload file to server */
+		if(strncmp(user_input,"put ",4)== 0)
 		{
 			put_content(argv[1],user_input,sockfd);
 		}
