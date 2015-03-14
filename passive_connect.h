@@ -1,13 +1,15 @@
-
+/*
+Generate a passive PORT number from the variables sent by server.
+*/
 int passive_port_number(char *message)
 {
-	int i = 0;
-	int count = 0;
-	int port = 0;
+	int i = INITIALISE;
+	int count = INITIALISE;
+	int port = INITIALISE;
 	char *token;
-	char delim[]=" ,)";
+	char delim[]=" ,)";/* Delimiters for strtok()*/
 
-	while(message[i] != '\0' && count < 4)
+	while(message[i] != '\0' && count < 4)/* To reach to th first PORT variable */
 	{
 		if(message[i] == ',')
 		{
@@ -41,6 +43,7 @@ int passive_port_number(char *message)
 	
 }
 
+/* Create PASSIVE socket and connect to server */
 int func_to_connect_passive(char *address,int port)
 {
 	int newsockfd;
