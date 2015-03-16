@@ -1,5 +1,5 @@
 /*
-Upload files on server.
+Upload file on server.
 */
 void put_content(char *arg,char *user_input,int sockfd)
 {	
