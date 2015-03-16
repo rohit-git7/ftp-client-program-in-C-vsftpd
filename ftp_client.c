@@ -57,12 +57,13 @@ int main(int argc, char *argv[])
 	int connect_value;
 	int ip_valid;
 	int temp = MIN_VALUE;
+	int count;
 
 	struct sockaddr_in serverAddress;/* client will connect on this */
-	struct timeval tm;/* time structure to set time wait for receive buffer */
-	tm.tv_sec = 1;
-	tm.tv_usec = 750000;
-
+	//struct timeval tm;/* time structure to set time wait for receive buffer */
+	/*tm.tv_sec = 2;
+	tm.tv_usec = 0;
+	*/
 	char message_from_server[MAXSZ];/* message from server*/
 	char user_input[MAXSZ];/* input from user */
 	char message_to_server[MAXSZ];/* message to server */
@@ -71,6 +72,8 @@ int main(int argc, char *argv[])
 	char dir[MAXSZ];/* directory name */
 	char username[MAXSZ];/* username entered by the user */
 	char working_dir[MAXSZ];
+	char old_name[MAXSZ];
+	char new_name[MAXSZ];
 
 	char *home_dir;
 	char *password = malloc(MAXSZ);/* password enterd by user */
@@ -115,12 +118,12 @@ int main(int argc, char *argv[])
 
 
 	/* Set time boundation on receive buffer */
-	if(setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,(char *)&tm,sizeof(tm)) == -1)
+/*	if(setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,(char *)&tm,sizeof(tm)) == -1)
 	{
 		perror("Error");
 		exit(1);
 	}
-	
+*/	
 	printf("Connected to %s.\n",argv[1]);
 
 	/* Receive message from server "Server will send 220" */
@@ -128,7 +131,9 @@ int main(int argc, char *argv[])
 	{
 		message_from_server[no_of_bytes] = '\0';
 		printf("%s\n",message_from_server);
-		sleep(1);
+		
+		if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+			break;
 		fflush(stdout);
 	}
 	
@@ -164,7 +169,8 @@ int main(int argc, char *argv[])
 			temp = 0;	
 		}
 		printf("%s\n",message_from_server);
-		sleep(1);
+		if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+			break;
 		fflush(stdout);
 	}
 
@@ -174,7 +180,6 @@ int main(int argc, char *argv[])
 		sprintf(pass,"PASS %s\r\n",password);
 		
 		send(sockfd,pass,strlen(pass),0);/* Send password to server */
-		sleep(4);
 
 		/* Receive message from server */
 		while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0)
@@ -190,6 +195,8 @@ int main(int argc, char *argv[])
 				temp = 0;	
 			}
 			printf("%s\n",message_from_server);
+			if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+				break;
 			fflush(stdout);
 			
 		}
@@ -203,6 +210,8 @@ int main(int argc, char *argv[])
 	/* Infinite Loop for user operation */
 	while(1)
 	{
+		temp = 0;
+		
 		printf("ftp> ");
 		fflush(stdout);
 	
@@ -211,6 +220,8 @@ int main(int argc, char *argv[])
 		bzero(message_to_server,MAXSZ);
 		bzero(message_from_server,MAXSZ);
 		bzero(working_dir,MAXSZ);
+		bzero(old_name,MAXSZ);
+		bzero(new_name,MAXSZ);
 	
 		/* Read user input */
 		no_of_bytes = read(STDIN_FILENO,user_input,MAXSZ);
@@ -233,6 +244,8 @@ int main(int argc, char *argv[])
 			{
 				message_from_server[no_of_bytes] = '\0';
 				printf("%s\n",message_from_server);
+				if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+					break;
 			}
 			break;
 		}
@@ -283,10 +296,13 @@ int main(int argc, char *argv[])
 				message_from_server[no_of_bytes] = '\0';
 				printf("%s\n",message_from_server);
 				fflush(stdout);
+				
+				if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+					break;
 			}
 		}
 	
-		/* List files on server side */
+		//* List files on server side */
 		if(strncmp(user_input,"ls ",3)== 0 || strcmp(user_input,"ls")== 0)
 		{
 			list_content(argv[1],user_input,sockfd);	
@@ -303,6 +319,9 @@ int main(int argc, char *argv[])
 				message_from_server[no_of_bytes] = '\0';
 				printf("%s\n",message_from_server);
 				fflush(stdout);
+				
+				if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+					break;
 			}
 		}
 
@@ -316,6 +335,64 @@ int main(int argc, char *argv[])
 		if(strncmp(user_input,"put ",4)== 0)
 		{
 			put_content(argv[1],user_input,sockfd);
+		}
+
+		/* Rename file on server */	
+		if(strncmp(user_input,"rename ",7) == 0)
+		{
+			
+			/* parse user input to get old file name and new file name */
+			count = sscanf(user_input,"%s %s %s",message_to_server,old_name,new_name);
+	
+			if(count != 3)
+			{		
+				printf("Error: rename expects two arguments\n\n");
+				continue;
+			}			
+
+			sprintf(message_to_server,"RNFR %s\r\n",old_name);
+		
+			send(sockfd,message_to_server,strlen(message_to_server),0);
+			while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0 )
+			{
+				message_from_server[no_of_bytes] = '\0';
+		
+				if(strncmp(message_from_server,"550",3) == 0)/* RNFR failes*/
+				{
+					printf("Error: Renaming file failed. No such file.\n\n");
+					temp = 1;	
+				}
+				else
+					printf("%s\n",message_from_server);
+
+				if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+					break;	
+				fflush(stdout);
+			}
+			
+			if(temp  == 1)
+				continue;
+
+			sprintf(message_to_server,"RNTO %s\r\n",new_name);
+
+			send(sockfd,message_to_server,strlen(message_to_server),0);
+			while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0 )
+			{
+				message_from_server[no_of_bytes] = '\0';
+				if(strncmp(message_from_server,"550",3) == 0)/* RNTO failes*/
+				{
+					printf("Error: Renaming file failed.\n\n");
+				}
+				else
+					printf("%s\n",message_from_server);
+
+				if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+					break;
+
+				fflush(stdout);
+			}
+	
+
 		}
 	}
         close(sockfd);
