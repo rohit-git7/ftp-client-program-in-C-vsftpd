@@ -59,6 +59,19 @@ void get_content(char *arg,char *user_input,int sockfd,char *home_dir)
 		newsockfd = func_to_connect_passive(arg,port);
 		sprintf(file,"%s",user_input + 4);
 
+/*		sprintf(message_to_server,"REST 100\r\n");
+		send(sockfd,message_to_server,strlen(message_to_server),0);
+		
+		while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0)
+		{
+			message_from_server[no_of_bytes] = '\0';
+			printf("%s\n",message_from_server);
+			fflush(stdout);
+			if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+				break;
+		}
+*/
+
 		/* Send file name */
 		sprintf(file_name,"RETR %s\r\n",user_input + 4);	
 		send(sockfd,file_name,strlen(file_name),0);
