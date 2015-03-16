@@ -1,5 +1,5 @@
 /*
-Upload files on server.
+Upload file uniquely on server.
 */
 void put_unique(char *arg,char *user_input,int sockfd)
 {	
