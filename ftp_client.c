@@ -4,6 +4,7 @@
 #include"list_content.h"
 #include"get_content.h"
 #include"put_content.h"
+#include"put_unique.h"
 
 /*Get home directory of user executing program */
 char *find_home_dir(char *file)
@@ -64,6 +65,7 @@ int main(int argc, char *argv[])
 	/*tm.tv_sec = 2;
 	tm.tv_usec = 0;
 	*/
+	char ch[MAXSZ];
 	char message_from_server[MAXSZ];/* message from server*/
 	char user_input[MAXSZ];/* input from user */
 	char message_to_server[MAXSZ];/* message to server */
@@ -185,6 +187,7 @@ int main(int argc, char *argv[])
 		while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0)
 		{
 			message_from_server[no_of_bytes] = '\0';
+
 			if(strncmp(message_from_server,"230",3) == 0)
 			{
 				temp = 2;
@@ -195,8 +198,10 @@ int main(int argc, char *argv[])
 				temp = 0;	
 			}
 			printf("%s\n",message_from_server);
+
 			if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
 				break;
+
 			fflush(stdout);
 			
 		}
@@ -206,6 +211,20 @@ int main(int argc, char *argv[])
 	{
 		exit(1);
 	}
+
+	/* Systen type(Server) */
+	sprintf(message_to_server,"SYST\r\n");
+	send(sockfd,message_to_server,strlen(message_to_server),0);
+
+	while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0)
+	{
+		message_from_server[no_of_bytes] = '\0';
+		printf("%s\n",message_from_server);
+
+		if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+			break;
+	}
+
 	
 	/* Infinite Loop for user operation */
 	while(1)
@@ -337,6 +356,12 @@ int main(int argc, char *argv[])
 			put_content(argv[1],user_input,sockfd);
 		}
 
+		/* Upload file uniquely to server */
+		if(strncmp(user_input,"uniqput ",8)== 0)
+		{
+			put_unique(argv[1],user_input,sockfd);
+		}
+		
 		/* Rename file on server */	
 		if(strncmp(user_input,"rename ",7) == 0)
 		{
@@ -357,17 +382,18 @@ int main(int argc, char *argv[])
 			{
 				message_from_server[no_of_bytes] = '\0';
 		
-				if(strncmp(message_from_server,"550",3) == 0)/* RNFR failes*/
+				if(strncmp(message_from_server,"550",3) == 0)/* RNFR fails*/
 				{
 					printf("Error: Renaming file failed. No such file.\n\n");
 					temp = 1;	
 				}
 				else
 					printf("%s\n",message_from_server);
+				
+				fflush(stdout);
 
 				if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
 					break;	
-				fflush(stdout);
 			}
 			
 			if(temp  == 1)
@@ -379,21 +405,100 @@ int main(int argc, char *argv[])
 			while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0 )
 			{
 				message_from_server[no_of_bytes] = '\0';
-				if(strncmp(message_from_server,"550",3) == 0)/* RNTO failes*/
+				if(strncmp(message_from_server,"550",3) == 0)/* RNTO fails*/
 				{
 					printf("Error: Renaming file failed.\n\n");
 				}
 				else
 					printf("%s\n",message_from_server);
+				
+				fflush(stdout);
 
 				if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
 					break;
 
-				fflush(stdout);
 			}
 	
 
 		}
+
+		/* Creating diectory on server */
+		if(strncmp(user_input,"mkdir ",6) == 0)
+		{	
+			sprintf(message_to_server,"MKD %s\r\n",user_input + 6);
+			send(sockfd,message_to_server,strlen(message_to_server),0);
+			while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0 )
+			{
+				message_from_server[no_of_bytes] = '\0';
+				if(strncmp(message_from_server,"550",3) == 0)/* MKD fails*/
+				{
+					printf("Error: Creating directory failed.\n\n");
+				}
+				else
+					printf("%s\n",message_from_server);
+				
+				fflush(stdout);
+
+				if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+					break;
+			
+			}
+		}
+
+		/* Removing directory on server */
+		if(strncmp(user_input,"rmdir ",6) == 0)
+		{	
+			sprintf(message_to_server,"RMD %s\r\n",user_input + 6);
+			send(sockfd,message_to_server,strlen(message_to_server),0);
+			while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0 )
+			{
+				message_from_server[no_of_bytes] = '\0';
+				if(strncmp(message_from_server,"550",3) == 0)/* RMD fails*/
+				{
+					printf("Error: Removing directory failed.\n\n");
+				}
+				else
+					printf("%s\n",message_from_server);
+				
+				fflush(stdout);
+
+				if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+					break;
+			
+			}
+		}
+		
+		/* Delete file on server */
+		if(strncmp(user_input,"rm ",3) == 0)
+		{	
+			printf("Do you really want to remove this file? yes/no \n");
+			
+			scanf("%s",ch);
+			
+			if(strcasecmp(ch,"yes") != 0)
+				continue;
+
+			sprintf(message_to_server,"DELE %s\r\n",user_input + 3);
+
+			send(sockfd,message_to_server,strlen(message_to_server),0);
+			while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0 )
+			{
+				message_from_server[no_of_bytes] = '\0';
+				if(strncmp(message_from_server,"550",3) == 0)/* DEL fails*/
+				{
+					printf("Error: Removing file failed.\n\n");
+				}
+				else
+					printf("%s\n",message_from_server);
+				
+				fflush(stdout);
+
+				if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+					break;
+			
+			}
+		}
+
 	}
         close(sockfd);
 	return 0;
