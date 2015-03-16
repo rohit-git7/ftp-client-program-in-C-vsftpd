@@ -23,6 +23,8 @@ void list_content(char *arg, char *user_input, int sockfd)
 		message_from_server[no_of_bytes] = '\0';
 		printf("%s\n",message_from_server);
 		fflush(stdout);
+		if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+			break;
 	}
 		
 	/* Request server to connect to PASSIVE port for file transfers */
@@ -32,6 +34,8 @@ void list_content(char *arg, char *user_input, int sockfd)
 		message_from_server[no_of_bytes] = '\0';
 		printf("%s\n",message_from_server);
 		fflush(stdout);
+		if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+			break;
 	}
 
 	/* Request acepted. Connect to PASSIVE port */
@@ -56,14 +60,18 @@ void list_content(char *arg, char *user_input, int sockfd)
 		printf("%s\n",message_from_server);
 		fflush(stdout);
 		
-		/* Read data on new PASSIVE socket */				
-		while((no_of_bytes = recv(newsockfd,message_from_server,MAXSZ,0))>0)
+		/* Read data on new PASSIVE socket */		
+				
+		while((no_of_bytes = recv(newsockfd,message_from_server,MAXSZ,0)) > 0)
 		{
 			message_from_server[no_of_bytes] = '\0';
 			printf("%s\n",message_from_server);
 			fflush(stdout);
+			if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+				break;
+		
 		}
-	
+
 		close(newsockfd);/* Close PASSIVE connection */
 		
 		while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0)
@@ -71,6 +79,8 @@ void list_content(char *arg, char *user_input, int sockfd)
 			message_from_server[no_of_bytes] = '\0';
 			printf("%s\n",message_from_server);
 			fflush(stdout);	
+			if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+				break;
 		}
 	}
 

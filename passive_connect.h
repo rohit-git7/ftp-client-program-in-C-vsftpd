@@ -57,5 +57,6 @@ int func_to_connect_passive(char *address,int port)
 	new_serverAddress.sin_port = htons(port);
 
 	connect(newsockfd,(struct sockaddr *)&new_serverAddress,sizeof(new_serverAddress));
+	
 	return newsockfd;
 }

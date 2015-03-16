@@ -34,6 +34,8 @@ void get_content(char *arg,char *user_input,int sockfd,char *home_dir)
 		message_from_server[no_of_bytes] = '\0';
 		printf("%s\n",message_from_server);
 		fflush(stdout);
+		if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+			break;
 	}
 	
 	/* Send request for PASSIVE connection */	
@@ -43,6 +45,8 @@ void get_content(char *arg,char *user_input,int sockfd,char *home_dir)
 		message_from_server[no_of_bytes] = '\0';
 		printf("%s\n",message_from_server);
 		fflush(stdout);
+		if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+			break;
 	}
 	
 	/* Server accepts request and sends PORT variables */
@@ -64,6 +68,8 @@ void get_content(char *arg,char *user_input,int sockfd,char *home_dir)
 			message_from_server[no_of_bytes] = '\0';
 			printf("%s\n",message_from_server);
 			fflush(stdout);
+			if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+				break;
 		}
 				
 		/* Permission Denied */
@@ -97,6 +103,8 @@ void get_content(char *arg,char *user_input,int sockfd,char *home_dir)
 			message_from_server[no_of_bytes] = '\0';
 			printf("%s\n",message_from_server);
 			fflush(stdout);
+			if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+				break;
 		}
 		
 	}

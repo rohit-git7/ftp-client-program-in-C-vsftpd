@@ -29,18 +29,29 @@ void put_content(char *arg,char *user_input,int sockfd)
 	
 	/* Tell server to change to BINARY mode */
 	send(sockfd,"TYPE I\r\n",8,0);
-	no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0);
-	message_from_server[no_of_bytes] = '\0';
-	printf("%s\n",message_from_server);
-	fflush(stdout);	
 	
+	while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0)
+	{
+		message_from_server[no_of_bytes] = '\0';
+		printf("%s\n",message_from_server);
+		fflush(stdout);	
+		if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+			break;	
+	}
+
 	/* Send request for PASSIVE connection */	
 	send(sockfd,passive,strlen(passive),0);
-	no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0);
-	message_from_server[no_of_bytes] = '\0';
-	printf("%s\n",message_from_server);
-	fflush(stdout);	
 	
+	while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0)
+	{
+		message_from_server[no_of_bytes] = '\0';
+		printf("%s\n",message_from_server);
+		fflush(stdout);	
+		if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+			break;
+	
+	}
+
 	/* Server accepts request and sends PORT variables */
 	if(strncmp(message_from_server,"227",3)== 0)
 	{
@@ -54,11 +65,14 @@ void put_content(char *arg,char *user_input,int sockfd)
 		sprintf(file_name,"STOR %s\r\n",user_input + 4);	
 		send(sockfd,file_name,strlen(file_name),0);
 			
-		no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0);
-		message_from_server[no_of_bytes] = '\0';
-		printf("%s\n",message_from_server);
-		fflush(stdout);	
-		
+		while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0)
+		{
+			message_from_server[no_of_bytes] = '\0';
+			printf("%s\n",message_from_server);
+			fflush(stdout);	
+			if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+				break;
+		}
 		/* Send file data to server */
 		if(strncmp(message_from_server,"150",3)== 0 || strncmp(message_from_server,"125",3)== 0)
 		{
@@ -80,10 +94,14 @@ void put_content(char *arg,char *user_input,int sockfd)
 			}
 					
 			close(newsockfd);
-			no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0);
-			message_from_server[no_of_bytes] = '\0';
-			printf("%s\n",message_from_server);
-			fflush(stdout);			
+			while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0)
+			{
+				message_from_server[no_of_bytes] = '\0';
+				printf("%s\n",message_from_server);
+				fflush(stdout);			
+				if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+					break;
+			}
 		}
 				
 	}
