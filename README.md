@@ -7,7 +7,11 @@ All functions are included. For example:
 `ls -l` : Same as `ls`, with some more details.                                                                          
 `pwd` : Current working directory on server side.                                                                        
 `get filename` : Download file from server.(File should be present on server side).                                      
-`put filename` : Upload file on server.                                                                                 
+`put filename` : Upload file on server.                                                                               
+`uniqput filename` : Uniquely upload file on server.                                                                 
+`mkdir directory_name` : Create directory on server.                                                                    
+`rmdir directory_name` : Remove directory on server.                                                                     
+`rm filename` : Remove file on server.                                                                                 
 `cd directory_name` : Traverse file system on server side.                                                               
 `rename old_filename new_filename` : Renaming file on server.                                                        
                                                                                                                        
