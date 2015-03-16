@@ -9,7 +9,8 @@ All functions are included. For example:
 `get filename` : Download file from server.(File should be present on server side).                                      
 `put filename` : Upload file on server.                                                                                 
 `cd directory_name` : Traverse file system on server side.                                                               
-
+`rename old_filename new_filename` : Renaming file name on server.
+                                                                                                                       
 `!ls` : To list files in current directory on client side.                                                               
 `!ls -l` : Same as `!ls`, with some more details.                                                                        
 `!pwd` : Current working directory on client side.                                                                       
