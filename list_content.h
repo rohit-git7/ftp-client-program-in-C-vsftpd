@@ -1,3 +1,4 @@
+#include"func.h"
 /*
 List the contents of current working directory on server (`ls` and `ls -l` linux commands).
 */
@@ -7,6 +8,10 @@ void list_content(char *arg, char *user_input, int sockfd)
 	int no_of_bytes;
 	int port;	
 	int newsockfd;
+	
+	struct timeval tm;/* time structure to set time wait for receive buffer */
+	tm.tv_sec = 1;
+	tm.tv_usec = 750000;
 
 	char message_from_server[MAXSZ];
 	char message_to_server[MAXSZ];
@@ -21,22 +26,30 @@ void list_content(char *arg, char *user_input, int sockfd)
 	while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0)
 	{
 		message_from_server[no_of_bytes] = '\0';
-		printf("%s\n",message_from_server);
+		printf("%s",message_from_server);
 		fflush(stdout);
-		if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+		if(strstr(message_from_server,"200 ") > 0 || strstr(message_from_server,"501 ") > 0 ||strstr(message_from_server,"500 ") > 0 ||strstr(message_from_server,"504 ") > 0 ||strstr(message_from_server,"421 ") > 0 || strstr(message_from_server,"530 ") > 0)
 			break;
 	}
-		
+	printf("\n");
+
+	if(strstr(message_from_server,"501 ") > 0 ||strstr(message_from_server,"500 ") > 0 ||strstr(message_from_server,"504 ") > 0 ||strstr(message_from_server,"421 ") > 0 || strstr(message_from_server,"530 ") > 0)
+		return;	
+
 	/* Request server to connect to PASSIVE port for file transfers */
 	send(sockfd,passive,strlen(passive),0);
 	while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0)
 	{
 		message_from_server[no_of_bytes] = '\0';
-		printf("%s\n",message_from_server);
+		printf("%s",message_from_server);
 		fflush(stdout);
-		if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+		if(strstr(message_from_server,"227 ") > 0 || strstr(message_from_server,"501 ") > 0 ||strstr(message_from_server,"500 ") > 0 ||strstr(message_from_server,"502 ") > 0 ||strstr(message_from_server,"421 ") > 0 || strstr(message_from_server,"530 ") > 0)
 			break;
 	}
+	printf("\n");
+
+	if(strstr(message_from_server,"501 ") > 0 ||strstr(message_from_server,"500 ") > 0 ||strstr(message_from_server,"502 ") > 0 ||strstr(message_from_server,"421 ") > 0 || strstr(message_from_server,"530 ") > 0)
+		return;
 
 	/* Request acepted. Connect to PASSIVE port */
 	if(strncmp(message_from_server,"227",3)== 0)
@@ -55,33 +68,52 @@ void list_content(char *arg, char *user_input, int sockfd)
 					
 		send(sockfd,message_to_server,strlen(message_to_server),0);
 		
-		no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0);
-		message_from_server[no_of_bytes] = '\0';
-		printf("%s\n",message_from_server);
-		fflush(stdout);
 		
+		while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0)
+		{
+			message_from_server[no_of_bytes] = '\0';
+			printf("%s",message_from_server);
+			fflush(stdout);
+			
+			if(strstr(message_from_server,"125 ") > 0 ||strstr(message_from_server,"150 ") > 0 || strstr(message_from_server,"501 ") > 0 ||strstr(message_from_server,"500 ") > 0 ||strstr(message_from_server,"502 ") > 0 ||strstr(message_from_server,"421 ") > 0 || strstr(message_from_server,"530 ") > 0)
+				break;
+		}
+		printf("\n");
+	
+		if(strncmp(message_from_server,"125",3) != 0 && strncmp(message_from_server,"150",3) != 0)
+			return;
+
+		func(newsockfd);
+
 		/* Read data on new PASSIVE socket */		
 				
 		while((no_of_bytes = recv(newsockfd,message_from_server,MAXSZ,0)) > 0)
 		{
 			message_from_server[no_of_bytes] = '\0';
-			printf("%s\n",message_from_server);
+			printf("%s",message_from_server);
 			fflush(stdout);
-			if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
-				break;
 		
 		}
-
+		printf("\n");
+		
 		close(newsockfd);/* Close PASSIVE connection */
+	
+		/* Set time boundation on receive buffer */
+		if(setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,(char *)&tm,sizeof(tm)) == -1)
+		{
+			perror("Error");
+			exit(1);
+		}
 		
 		while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0)
 		{	
 			message_from_server[no_of_bytes] = '\0';
-			printf("%s\n",message_from_server);
+			printf("%s",message_from_server);
 			fflush(stdout);	
-			if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+			if(strstr(message_from_server,"226 ") > 0)
 				break;
 		}
+		printf("\n");
 	}
 
 }	
