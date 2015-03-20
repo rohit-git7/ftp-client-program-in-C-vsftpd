@@ -61,10 +61,7 @@ int main(int argc, char *argv[])
 	int count;
 
 	struct sockaddr_in serverAddress;/* client will connect on this */
-	//struct timeval tm;/* time structure to set time wait for receive buffer */
-	/*tm.tv_sec = 2;
-	tm.tv_usec = 0;
-	*/
+	
 	char ch[MAXSZ];
 	char message_from_server[MAXSZ];/* message from server*/
 	char user_input[MAXSZ];/* input from user */
@@ -118,14 +115,7 @@ int main(int argc, char *argv[])
         	exit(1);
 	}
 
-
-	/* Set time boundation on receive buffer */
-/*	if(setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,(char *)&tm,sizeof(tm)) == -1)
-	{
-		perror("Error");
-		exit(1);
-	}
-*/	
+	
 	printf("Connected to %s.\n",argv[1]);
 
 	/* Receive message from server "Server will send 220" */
@@ -133,15 +123,14 @@ int main(int argc, char *argv[])
 	{
 		message_from_server[no_of_bytes] = '\0';
 		printf("%s\n",message_from_server);
-		
-		if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+	
+		if(strstr(message_from_server,"220 ") > 0 || strstr(message_from_server,"421 ") > 0)	
 			break;
 		fflush(stdout);
 	}
 	
 	printf("Name (%s): ",argv[1]);
 	scanf("%s",username);/* Enter name of user on server */
-	
 	
 	sprintf(user,"USER %s\r\n",username);
 		
@@ -171,7 +160,7 @@ int main(int argc, char *argv[])
 			temp = 0;	
 		}
 		printf("%s\n",message_from_server);
-		if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+		if(strstr(message_from_server,"230 ") > 0 || strstr(message_from_server,"500 ") > 0 || strstr(message_from_server,"501 ") > 0 || strstr(message_from_server,"421 ") > 0 || strstr(message_from_server,"332 ") > 0 || strstr(message_from_server,"530 ")|| strstr(message_from_server,"331 ") > 0)
 			break;
 		fflush(stdout);
 	}
@@ -199,7 +188,7 @@ int main(int argc, char *argv[])
 			}
 			printf("%s\n",message_from_server);
 
-			if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+			if(strstr(message_from_server,"230 ") > 0 || strstr(message_from_server,"500 ") > 0 || strstr(message_from_server,"501 ") > 0 || strstr(message_from_server,"421 ") > 0 || strstr(message_from_server,"332 ") > 0 || strstr(message_from_server,"530 ")|| strstr(message_from_server,"503 ") > 0 || strstr(message_from_server,"202 ") > 0)
 				break;
 
 			fflush(stdout);
@@ -211,6 +200,7 @@ int main(int argc, char *argv[])
 	{
 		exit(1);
 	}
+	
 
 	/* Systen type(Server) */
 	sprintf(message_to_server,"SYST\r\n");
@@ -220,9 +210,9 @@ int main(int argc, char *argv[])
 	{
 		message_from_server[no_of_bytes] = '\0';
 		printf("%s\n",message_from_server);
-
-		if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+		if(strstr(message_from_server,"215 ") > 0 || strstr(message_from_server,"500 ") > 0 || strstr(message_from_server,"501 ") > 0 || strstr(message_from_server,"421 ") > 0 || strstr(message_from_server,"502 ") > 0) 	
 			break;
+
 	}
 
 	
@@ -263,7 +253,7 @@ int main(int argc, char *argv[])
 			{
 				message_from_server[no_of_bytes] = '\0';
 				printf("%s\n",message_from_server);
-				if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+				if(strstr(message_from_server,"221 ") > 0 || strstr(message_from_server,"500 ") > 0)	
 					break;
 			}
 			break;
@@ -316,7 +306,7 @@ int main(int argc, char *argv[])
 				printf("%s\n",message_from_server);
 				fflush(stdout);
 				
-				if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+				if(strstr(message_from_server,"530 ") > 0 || strstr(message_from_server,"250 ") > 0 || strstr(message_from_server,"500 ") > 0 || strstr(message_from_server,"501 ") > 0 || strstr(message_from_server,"421 ") > 0 || strstr(message_from_server,"502 ") > 0 || strstr(message_from_server,"550 ") > 0)
 					break;
 			}
 		}
@@ -339,7 +329,7 @@ int main(int argc, char *argv[])
 				printf("%s\n",message_from_server);
 				fflush(stdout);
 				
-				if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+				if(strstr(message_from_server,"257 ") > 0 || strstr(message_from_server,"500 ") > 0 || strstr(message_from_server,"501 ") > 0 || strstr(message_from_server,"421 ") > 0 || strstr(message_from_server,"502 ") > 0 || strstr(message_from_server,"550 ") > 0)
 					break;
 			}
 		}
@@ -391,8 +381,8 @@ int main(int argc, char *argv[])
 					printf("%s\n",message_from_server);
 				
 				fflush(stdout);
-
-				if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+				
+				if(strstr(message_from_server,"350 ") > 0 || strstr(message_from_server,"450 ") > 0 || strstr(message_from_server,"530 ") > 0 || strstr(message_from_server,"500 ") > 0|| strstr(message_from_server,"501 ") > 0 || strstr(message_from_server,"421 ") > 0 || strstr(message_from_server,"502 ") > 0 || strstr(message_from_server,"550 ") > 0)
 					break;	
 			}
 			
@@ -413,8 +403,8 @@ int main(int argc, char *argv[])
 					printf("%s\n",message_from_server);
 				
 				fflush(stdout);
-
-				if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+				
+				if(strstr(message_from_server,"553 ") > 0 ||strstr(message_from_server,"250 ") > 0 || strstr(message_from_server,"532 ") > 0 || strstr(message_from_server,"530 ") > 0 || strstr(message_from_server,"500 ") > 0|| strstr(message_from_server,"501 ") > 0 || strstr(message_from_server,"421 ") > 0 || strstr(message_from_server,"502 ") > 0 || strstr(message_from_server,"503 ") > 0)
 					break;
 
 			}
@@ -439,7 +429,7 @@ int main(int argc, char *argv[])
 				
 				fflush(stdout);
 
-				if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+				if(strstr(message_from_server,"257 ") > 0 || strstr(message_from_server,"530 ") > 0 || strstr(message_from_server,"500 ") > 0|| strstr(message_from_server,"501 ") > 0 || strstr(message_from_server,"421 ") > 0 || strstr(message_from_server,"502 ") > 0 || strstr(message_from_server,"550 ") > 0)
 					break;
 			
 			}
@@ -462,9 +452,8 @@ int main(int argc, char *argv[])
 				
 				fflush(stdout);
 
-				if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
-					break;
-			
+				if(strstr(message_from_server,"250 ") > 0 || strstr(message_from_server,"530 ") > 0 || strstr(message_from_server,"500 ") > 0|| strstr(message_from_server,"501 ") > 0 || strstr(message_from_server,"421 ") > 0 || strstr(message_from_server,"502 ") > 0 || strstr(message_from_server,"550 ") > 0)
+					break;	
 			}
 		}
 		
@@ -493,11 +482,12 @@ int main(int argc, char *argv[])
 				
 				fflush(stdout);
 
-				if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+				if(strstr(message_from_server,"250 ") > 0 || strstr(message_from_server,"450 ") > 0 || strstr(message_from_server,"530 ") > 0 || strstr(message_from_server,"500 ") > 0|| strstr(message_from_server,"501 ") > 0 || strstr(message_from_server,"421 ") > 0 || strstr(message_from_server,"502 ") > 0 || strstr(message_from_server,"550 ") > 0)
 					break;
 			
 			}
 		}
+
 
 	}
         close(sockfd);
