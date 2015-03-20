@@ -1,5 +1,5 @@
 /*
-Upload file on server.
+Upload files on server.
 */
 void put_content(char *arg,char *user_input,int sockfd)
 {	
@@ -33,11 +33,15 @@ void put_content(char *arg,char *user_input,int sockfd)
 	while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0)
 	{
 		message_from_server[no_of_bytes] = '\0';
-		printf("%s\n",message_from_server);
+		printf("%s",message_from_server);
 		fflush(stdout);	
-		if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+		if(strstr(message_from_server,"200 ") > 0 || strstr(message_from_server,"501 ") > 0 ||strstr(message_from_server,"500 ") > 0 ||strstr(message_from_server,"504 ") > 0 ||strstr(message_from_server,"421 ") > 0 || strstr(message_from_server,"530 ") > 0)
 			break;	
 	}
+	printf("\n");
+
+	if(strstr(message_from_server,"501 ") > 0 ||strstr(message_from_server,"500 ") > 0 ||strstr(message_from_server,"504 ") > 0 ||strstr(message_from_server,"421 ") > 0 || strstr(message_from_server,"530 ") > 0)
+		return;	
 
 	/* Send request for PASSIVE connection */	
 	send(sockfd,passive,strlen(passive),0);
@@ -45,21 +49,26 @@ void put_content(char *arg,char *user_input,int sockfd)
 	while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0)
 	{
 		message_from_server[no_of_bytes] = '\0';
-		printf("%s\n",message_from_server);
+		printf("%s",message_from_server);
 		fflush(stdout);	
-		if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+		if(strstr(message_from_server,"227 ") > 0 || strstr(message_from_server,"501 ") > 0 ||strstr(message_from_server,"500 ") > 0 ||strstr(message_from_server,"502 ") > 0 ||strstr(message_from_server,"421 ") > 0 || strstr(message_from_server,"530 ") > 0)
 			break;
 	
 	}
+	printf("\n");
+
+	if(strstr(message_from_server,"501 ") > 0 ||strstr(message_from_server,"500 ") > 0 ||strstr(message_from_server,"502 ") > 0 ||strstr(message_from_server,"421 ") > 0 || strstr(message_from_server,"530 ") > 0)
+		return;
 
 	/* Server accepts request and sends PORT variables */
-	if(strncmp(message_from_server,"227",3)== 0)
+	if(strncmp(message_from_server,"227",3) == 0)
 	{
 		/* Generate a PORT number using PORT variables */
 		port = passive_port_number(message_from_server); 
 	
 		/* Connect to server using another PORT for file transfers */
 		newsockfd = func_to_connect_passive(arg,port);
+		fcntl(newsockfd,F_SETFL,FNDELAY);
 		
 		/* Send file name to server */
 		sprintf(file_name,"STOR %s\r\n",user_input + 4);	
@@ -68,13 +77,15 @@ void put_content(char *arg,char *user_input,int sockfd)
 		while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0)
 		{
 			message_from_server[no_of_bytes] = '\0';
-			printf("%s\n",message_from_server);
+			printf("%s",message_from_server);
 			fflush(stdout);	
-			if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+			if(strstr(message_from_server,"125 ") > 0 ||strstr(message_from_server,"150 ") > 0 || strstr(message_from_server,"501 ") > 0 ||strstr(message_from_server,"500 ") > 0 ||strstr(message_from_server,"452 ") > 0 ||strstr(message_from_server,"421 ") > 0 || strstr(message_from_server,"530 ") > 0 || strstr(message_from_server,"553 ") > 0 ||strstr(message_from_server,"532 ") > 0)
 				break;
 		}
+		printf("\n");
+
 		/* Send file data to server */
-		if(strncmp(message_from_server,"150",3)== 0 || strncmp(message_from_server,"125",3)== 0)
+		if(strncmp(message_from_server,"150",3) == 0 || strncmp(message_from_server,"125",3) == 0)
 		{
 			sprintf(file,"%s",user_input + 4);
 
@@ -99,7 +110,7 @@ void put_content(char *arg,char *user_input,int sockfd)
 				message_from_server[no_of_bytes] = '\0';
 				printf("%s\n",message_from_server);
 				fflush(stdout);			
-				if(message_from_server[no_of_bytes-2] == '\r' && message_from_server[no_of_bytes-1] == '\n')
+				if(strstr(message_from_server,"226 ") > 0)
 					break;
 			}
 		}
