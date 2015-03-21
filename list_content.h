@@ -10,7 +10,7 @@ void list_content(char *arg, char *user_input, int sockfd)
 	int newsockfd;
 	
 	struct timeval tm;/* time structure to set time wait for receive buffer */
-	tm.tv_sec = 1;
+	tm.tv_sec = 4;
 	tm.tv_usec = 750000;
 
 	char message_from_server[MAXSZ];
@@ -99,12 +99,7 @@ void list_content(char *arg, char *user_input, int sockfd)
 		close(newsockfd);/* Close PASSIVE connection */
 	
 		/* Set time boundation on receive buffer */
-		if(setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,(char *)&tm,sizeof(tm)) == -1)
-		{
-			perror("Error");
-			exit(1);
-		}
-		
+		setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,(char *)&tm,sizeof(tm));
 		while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0)
 		{	
 			message_from_server[no_of_bytes] = '\0';
@@ -114,6 +109,10 @@ void list_content(char *arg, char *user_input, int sockfd)
 				break;
 		}
 		printf("\n");
+	
+	tm.tv_sec = 0;
+	tm.tv_usec = 0;
+	setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,(char *)&tm,sizeof(tm));
 	}
 
 }	
