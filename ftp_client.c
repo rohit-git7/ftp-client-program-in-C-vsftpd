@@ -115,7 +115,6 @@ int main(int argc, char *argv[])
         	exit(1);
 	}
 
-	
 	printf("Connected to %s.\n",argv[1]);
 
 	/* Receive message from server "Server will send 220" */
@@ -374,10 +373,8 @@ int main(int argc, char *argv[])
 		
 				if(strncmp(message_from_server,"550",3) == 0)/* RNFR fails*/
 				{
-					printf("Error: Renaming file failed. No such file.\n\n");
 					temp = 1;	
 				}
-				else
 					printf("%s\n",message_from_server);
 				
 				fflush(stdout);
