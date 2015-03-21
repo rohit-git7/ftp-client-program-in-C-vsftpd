@@ -12,6 +12,10 @@ void put_unique(char *arg,char *user_input,int sockfd)
 	int total;
 	int size;
 	
+	struct timeval tm;/* time structure to set time wait for receive buffer */
+	tm.tv_sec = 1;
+	tm.tv_usec = 750000;
+	
 	struct stat buff;
 
 	char message_from_server[MAXSZ];
@@ -71,7 +75,7 @@ void put_unique(char *arg,char *user_input,int sockfd)
 		fcntl(newsockfd,F_SETFL,FNDELAY);
 		
 		/* Send file name to server */
-		sprintf(file_name,"STOU %s\r\n",user_input + 4);	
+		sprintf(file_name,"STOU %s\r\n",user_input + 8);	
 		send(sockfd,file_name,strlen(file_name),0);
 			
 		while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0)
@@ -105,6 +109,8 @@ void put_unique(char *arg,char *user_input,int sockfd)
 			}
 					
 			close(newsockfd);
+			/* Set time boundation on receive buffer */
+			setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,(char *)&tm,sizeof(tm));
 			while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0)
 			{
 				message_from_server[no_of_bytes] = '\0';
