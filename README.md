@@ -1,6 +1,6 @@
                                       FTP Client program in C(vsFTPd)
 ------------------------------------------------------------------------------------------------------------------
-FTP client prgram in C to connect to vsFTPd server with all functionalities of standard FTP.(Tested on many FTP sites).                                                                                                        
+FTP client prgram in C to connect to FTP server with all functionalities of standard FTP.(Tested on many FTP sites).                                                                                                        
 
 Following functions are included. For example:                                                                               
 `ls` : To list files in current directory on server side.                                                                
