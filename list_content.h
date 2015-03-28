@@ -1,4 +1,3 @@
-#include"func.h"
 /*
 List the contents of current working directory on server (`ls` and `ls -l` linux commands).
 */
@@ -82,8 +81,6 @@ void list_content(char *arg, char *user_input, int sockfd)
 	
 		if(strncmp(message_from_server,"125",3) != 0 && strncmp(message_from_server,"150",3) != 0)
 			return;
-
-		func(newsockfd);
 
 		/* Read data on new PASSIVE socket */		
 				
