@@ -11,6 +11,10 @@ void put_content(char *arg,char *user_input,int sockfd)
 	int p;
 	int total;
 	int size;
+	int file_size;
+	int down = 2;
+	int temp;
+	int temp1;	
 	
 	struct timeval tm;/* time structure to set time wait for receive buffer */
 	tm.tv_sec = 1;
@@ -83,7 +87,7 @@ void put_content(char *arg,char *user_input,int sockfd)
 			message_from_server[no_of_bytes] = '\0';
 			printf("%s",message_from_server);
 			fflush(stdout);	
-			if(strstr(message_from_server,"125 ") > 0 ||strstr(message_from_server,"150 ") > 0 || strstr(message_from_server,"501 ") > 0 ||strstr(message_from_server,"500 ") > 0 ||strstr(message_from_server,"452 ") > 0 ||strstr(message_from_server,"421 ") > 0 || strstr(message_from_server,"530 ") > 0 || strstr(message_from_server,"553 ") > 0 ||strstr(message_from_server,"532 ") > 0)
+			if(strstr(message_from_server,"550 ") > 0 ||strstr(message_from_server,"125 ") > 0 ||strstr(message_from_server,"150 ") > 0 || strstr(message_from_server,"501 ") > 0 ||strstr(message_from_server,"500 ") > 0 ||strstr(message_from_server,"452 ") > 0 ||strstr(message_from_server,"421 ") > 0 || strstr(message_from_server,"530 ") > 0 || strstr(message_from_server,"553 ") > 0 ||strstr(message_from_server,"532 ") > 0)
 				break;
 		}
 		printf("\n");
@@ -96,9 +100,28 @@ void put_content(char *arg,char *user_input,int sockfd)
 			fd = open(file,O_RDONLY);
 			fstat(fd,&buff);
 			size = (int)buff.st_size;
+			file_size = 0;		
+			if(size % 100 == 0)
+				temp = (size / 100);
+			else
+				temp = (size / 100) + 1;
+			
+			temp1 = temp;
+			printf("Uploading [");
+			fflush(stdout);
 			while(size > 0)
 			{
 				no_of_bytes = read(fd,data,MAXSZ);
+				file_size += no_of_bytes;
+				temp1 = temp * down;
+			
+				while(temp1 <= file_size)
+				{
+					printf("#");
+					fflush(stdout);
+					down += 2;
+					temp1 = temp * down;
+				}
 				total = 0;
 				while(total < no_of_bytes)
                 		{
@@ -107,6 +130,9 @@ void put_content(char *arg,char *user_input,int sockfd)
 				}
 				size -= no_of_bytes;
 			}
+		
+			printf("] 100%%\n");
+			fflush(stdout);
 					
 			close(newsockfd);
 			/* Set time boundation on receive buffer */
