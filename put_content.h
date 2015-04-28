@@ -76,7 +76,6 @@ void put_content(char *arg,char *user_input,int sockfd)
 	
 		/* Connect to server using another PORT for file transfers */
 		newsockfd = func_to_connect_passive(arg,port);
-		fcntl(newsockfd,F_SETFL,FNDELAY);
 		
 		/* Send file name to server */
 		sprintf(file_name,"STOR %s\r\n",user_input + 4);	
