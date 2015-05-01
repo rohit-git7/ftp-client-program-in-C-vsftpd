@@ -6,17 +6,6 @@
 #include"put_content.h"
 #include"put_unique.h"
 
-/*Get home directory of user executing program */
-char *find_home_dir(char *file)
-{
-	struct passwd *pw;
-	char *sudo_uid = getenv("SUDO_UID");
-	pw = getpwuid(atoi(sudo_uid));
-	
-	return pw->pw_dir;
-
-}
-
 /*Validating IP Address*/
 int validate_ip(char *ip)
 {
@@ -60,11 +49,13 @@ int main(int argc, char *argv[])
 	int temp = MIN_VALUE;
 	int count;
 	int dir_check;
+	int i;
 
 	clock_t start,end;
 	double cpu_time;
 
 	struct sockaddr_in serverAddress;/* client will connect on this */
+	struct hostent *host;
 	
 	char ch[MAXSZ];
 	char message_from_server[MAXSZ];/* message from server*/
@@ -78,8 +69,9 @@ int main(int argc, char *argv[])
 	char old_name[MAXSZ];
 	char new_name[MAXSZ];
 
-	char *home_dir;
-	char *password = malloc(MAXSZ);/* password enterd by user */
+	char *password = (char *)malloc(MAXSZ);/* password enterd by user */
+	char *ip_address = (char *)malloc(MAXSZ);
+
 
 	if(argc != 2) /* `./executable ip-adddress` */
 	{
@@ -87,15 +79,52 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 	
-	ip_valid = validate_ip(argv[1]);/* Validate ip-address entered by user */
-	
-	if(ip_valid == MIN_VALUE)/* Invalid ipaddress */
+	if(isdigit(argv[1][0]))
 	{
-		printf("Error: Invalid ip-address\n");
-		exit(1);
-	}
+		ip_valid = validate_ip(argv[1]);/* Validate ip-address entered by user */
 	
-	home_dir = find_home_dir(argv[0]);/* Home directory of user executing the program */
+		if(ip_valid == MIN_VALUE)/* Invalid ipaddress */
+		{
+			printf("Error: Invalid ip-address!\n");
+			exit(1);
+		}
+
+		strcpy(ip_address,argv[1]);
+	}
+	else
+	{
+		host = gethostbyname(argv[1]);
+		if(host == NULL)
+		{
+			switch(h_errno)
+			{
+				case NO_ADDRESS:
+					printf("The requested name is valid but doesn't have any IP Address\n");
+					break;
+				case NO_RECOVERY:
+					printf("A non-recoverable name server error occured\n");
+					break;
+				case TRY_AGAIN:
+					printf("A temporary error occurred on authoritative name server. Try again later.\n");
+				case HOST_NOT_FOUND:
+					printf("Unknown host.\n");
+					break;
+				default:
+					printf("Unknown error.\n");
+
+			}
+		
+			exit(1);
+		}
+		while(host->h_addr_list[i]!= NULL)
+		{
+			sprintf(ip_address,"%u.%u.%u.%u",host->h_addr_list[i][0] & 0x000000FF, host->h_addr_list[i][1] & 0x000000FF,host->h_addr_list[i][2] & 0x000000FF,host->h_addr_list[i][3] & 0x000000FF);
+			i++;
+		}
+		
+
+	}
+
 
 	sockfd = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);/* Create socket */
 
@@ -108,7 +137,7 @@ int main(int argc, char *argv[])
 	bzero(&serverAddress,sizeof(serverAddress));/* Initialise structure */
 
 	serverAddress.sin_family = AF_INET;
-	serverAddress.sin_addr.s_addr = inet_addr(argv[1]);
+	serverAddress.sin_addr.s_addr = inet_addr(ip_address);
 	serverAddress.sin_port = htons(PORT);
 
 	/* Connect to server */
@@ -119,7 +148,7 @@ int main(int argc, char *argv[])
         	exit(1);
 	}
 
-	printf("Connected to %s.\n",argv[1]);
+	printf("Connected to %s.\n",ip_address);
 
 	/* Receive message from server "Server will send 220" */
 	while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0 )
@@ -135,7 +164,7 @@ int main(int argc, char *argv[])
 	if(strstr(message_from_server,"421 ") > 0)	
 		exit(1);
 	
-	printf("Name (%s): ",argv[1]);
+	printf("Name (%s): ",ip_address);
 	scanf("%s",username);/* Enter name of user on server */
 	
 	sprintf(user,"USER %s\r\n",username);
@@ -192,15 +221,56 @@ int main(int argc, char *argv[])
 			{
 				temp = 0;	
 			}
+	
+			if(strncmp(message_from_server,"501",3) == 0)
+			{
+				temp = 3;	
+			}
+
 			printf("%s\n",message_from_server);
+			fflush(stdout);
 
 			if(strstr(message_from_server,"230 ") > 0 || strstr(message_from_server,"500 ") > 0 || strstr(message_from_server,"501 ") > 0 || strstr(message_from_server,"421 ") > 0 || strstr(message_from_server,"332 ") > 0 || strstr(message_from_server,"530 ")|| strstr(message_from_server,"503 ") > 0 || strstr(message_from_server,"202 ") > 0)
 				break;
 
-			fflush(stdout);
 			
 		}
 	}	
+
+	if(temp == 3)
+	{
+
+		send(sockfd,pass,strlen(pass),0);/* Send password to server */
+		while((no_of_bytes = recv(sockfd,message_from_server,MAXSZ,0)) > 0)
+		{
+
+			if(strncmp(message_from_server,"230",3) == 0)
+			{
+				temp = 2;
+			}
+			
+			if(strncmp(message_from_server,"530",3) == 0)
+			{
+				temp = 0;	
+			}
+		
+			if(strncmp(message_from_server,"501",3) == 0)
+			{
+				temp = 3;	
+			}
+			printf("%s\n",message_from_server);
+			fflush(stdout);	
+
+			if(strstr(message_from_server,"230 ") > 0 || strstr(message_from_server,"500 ") > 0 || strstr(message_from_server,"501 ") > 0 || strstr(message_from_server,"421 ") > 0 || strstr(message_from_server,"332 ") > 0 || strstr(message_from_server,"530 ")|| strstr(message_from_server,"503 ") > 0 || strstr(message_from_server,"202 ") > 0)
+				break;
+
+			
+		}
+
+	
+
+	}
+	
 
 	if(temp == 0)
 	{
@@ -343,7 +413,7 @@ int main(int argc, char *argv[])
 		//* List files on server side */
 		if(strncmp(user_input,"ls ",3)== 0 || strcmp(user_input,"ls")== 0)
 		{
-			list_content(argv[1],user_input,sockfd);	
+			list_content(ip_address,user_input,sockfd);	
 		}
 	
 		/* Current working directory on server side */
@@ -367,7 +437,7 @@ int main(int argc, char *argv[])
 		if(strncmp(user_input,"get ",4) == 0)
 		{
 			start = clock();
-			get_content(argv[1],user_input,sockfd,home_dir);
+			get_content(ip_address,user_input,sockfd);
 			end = clock();
 			cpu_time = ((double)(end - start))/CLOCKS_PER_SEC;
 			printf("Time taken %lf\n\n",cpu_time);
@@ -377,13 +447,13 @@ int main(int argc, char *argv[])
 		/* Upload file to server */
 		if(strncmp(user_input,"put ",4)== 0)
 		{
-			put_content(argv[1],user_input,sockfd);
+			put_content(ip_address,user_input,sockfd);
 		}
 
 		/* Upload file uniquely to server */
 		if(strncmp(user_input,"uniqput ",8)== 0)
 		{
-			put_unique(argv[1],user_input,sockfd);
+			put_unique(ip_address,user_input,sockfd);
 		}
 		
 		/* Rename file on server */	

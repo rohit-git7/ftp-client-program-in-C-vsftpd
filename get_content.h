@@ -1,7 +1,7 @@
 /*
 Download files from server.
 */
-void get_content(char *arg,char *user_input,int sockfd,char *home_dir)
+void get_content(char *arg,char *user_input,int sockfd)
 {
 	/* Temporary variables*/
 	int no_of_bytes;
@@ -20,7 +20,6 @@ void get_content(char *arg,char *user_input,int sockfd,char *home_dir)
 	char message_to_server[MAXSZ];
 	char file[MAXSZ];// File name
 	char file_name[MAXSZ];// File name with instruction to server
-	char file_home_dir[MAXSZ];// Location of file i.e. User's home directory(Complete path to file).
 	char data[MAXSZ];// Data transfer
 	char size_file[MAXSZ];// Get file size
 
@@ -29,7 +28,6 @@ void get_content(char *arg,char *user_input,int sockfd,char *home_dir)
 	bzero(message_to_server,MAXSZ);
 	bzero(file_name,MAXSZ);
 	bzero(file,MAXSZ);
-	bzero(file_home_dir,MAXSZ);
 	bzero(data,MAXSZ);
 	bzero(size_file,MAXSZ);
 	
@@ -123,10 +121,9 @@ void get_content(char *arg,char *user_input,int sockfd,char *home_dir)
 				return;
 		}
 					
-		sprintf(file_home_dir,"%s/%s",home_dir,file);
 		
 		/* Create file on client system */	
-		fd = open(file_home_dir,O_CREAT|O_WRONLY|O_TRUNC,0644);			
+		fd = open(file,O_CREAT|O_WRONLY|O_TRUNC,0644);			
 		file_size = 0;		
 		if(size % 100 == 0)
 			temp = (size / 100);

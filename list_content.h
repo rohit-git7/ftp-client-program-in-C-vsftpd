@@ -83,16 +83,18 @@ void list_content(char *arg, char *user_input, int sockfd)
 			return;
 
 		/* Read data on new PASSIVE socket */		
+		int new_fd = open("temp.txt",O_WRONLY|O_CREAT|O_TRUNC);
 				
 		while((no_of_bytes = recv(newsockfd,message_from_server,MAXSZ,0)) > 0)
 		{
+			write(new_fd,message_from_server,no_of_bytes);
 			message_from_server[no_of_bytes] = '\0';
 			printf("%s",message_from_server);
 			fflush(stdout);
 		
 		}
 		printf("\n");
-		
+		close(new_fd);
 		close(newsockfd);/* Close PASSIVE connection */
 	
 		/* Set time boundation on receive buffer */

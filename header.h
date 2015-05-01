@@ -12,6 +12,7 @@
 #include<grp.h>
 #include<pwd.h>
 #include<time.h>
+#include<netdb.h>
 
 #define PORT 21
 #define MAXSZ 4096
