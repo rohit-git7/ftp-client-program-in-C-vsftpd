@@ -27,7 +27,7 @@ Following functions are included. For example:
 To run in C language:                                                                                                     
 Run command `make all` to compile program.                                                                              
 To execute, run `./myftp server-ip-address`.                                                                            
-Enter user credentials to login on server.                                                                                                                                           
+Enter user credentials to login on server.                                                                                                                                                                                                                                                                                                                                                                                                                                         
 To run in PHP language:                                                                                                     
 To execute, run `php ftp_client.php server-ip-address`.                                                                     
 Enter user credentials to login on server.                                                                                    
